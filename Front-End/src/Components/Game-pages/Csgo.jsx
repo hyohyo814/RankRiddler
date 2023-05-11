@@ -89,10 +89,15 @@ const Csgo = () => {
       });
       const data = await response.json();
       console.log(data);
+  
+      // Update the score cookie with the new value received from the backend
+      Cookies.set('score', data.score, { secure: true, httpOnly: true });
+  
     } catch (error) {
       console.error(error);
     }
   };
+  
 
   const checkAnswer = () => {
     const rankList = [
