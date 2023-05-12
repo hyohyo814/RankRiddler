@@ -1,23 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, {  useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Cookies from 'js-cookie';
+import {useDispatch,useSelector} from "react-redux"
+import { settingsActions } from '../../store/SettingsSlice';
 
 const Settings = () => {
-  const [userId, setUserId] = useState(() => Cookies.get('userId') || uuidv4());
-  const [data, setData] = useState([]);
-  const [index, setIndex] = useState(-1);
-  const [username, setUsername] = useState('Guest');
-  const [isUsernameChanged, setIsUsernameChanged] = useState(false);
-  const [score, setScore] = useState(0);
+
+  const dispatch = useDispatch();
+  const userId = useSelector((state) => state.settings.userId);
+  const data = useSelector((state) => state.settings.data);
+  const index = useSelector((state) => state.settings.index);
+  const username = useSelector((state) => state.settings.username);
+  const isUsernameChanged = useSelector(
+    (state) => state.settings.isUsernameChanged
+  );
+
+
+  const score = Cookies.get('score') || 0;
 
   useEffect(() => {
     if (!userId) {
       const id = uuidv4();
       const shortUuid = id.slice(0, 8);
       Cookies.set('userId', shortUuid, { secure: true });
-      setUserId(shortUuid);
+      dispatch(settingsActions.setUserId(shortUuid));
+
     }
-  }, [userId]);
+  }, [userId,dispatch]);
+
+//   const storedUsername = Cookies.get('username') || 'Guest';
+//   dispatch(settingsActions.setUsername(storedUsername));
+
+
+//   // If the stored username is "Guest", set isUsernameChanged to false
+//   dispatch(settingsActions.setIsUsernameChanged(storedUsername !== 'Guest'));
+
+
+//   const storedScore = Cookies.get('score') || 0;
+//   Cookies.set('score', storedScore, { secure: true });
+// }, [userId,dispatch]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,22 +53,25 @@ const Settings = () => {
           throw new Error('Failed to fetch data');
         }
         const userData = await response.json();
-        setData(userData);
+        dispatch(settingsActions.setData(userData))
+        // setData(userData);
       } catch (error) {
         console.error(error);
       }
     };
     fetchData();
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const foundUser = data.find((user) => user.username === username);
     if (foundUser) {
-      setIndex(data.indexOf(foundUser));
+      dispatch(settingsActions.setIndex(data.indexOf(foundUser)));
+
     } else {
-      setIndex(-1);
+      dispatch(settingsActions.setIndex(data.indexOf(foundUser)));
+
     }
-  }, [username, data]);
+  }, [username, data,dispatch]);
 
   const saveUser = async (username) => {
     try {
@@ -62,8 +86,8 @@ const Settings = () => {
         credentials: 'include', 
       });
       const data = await response.json();
-      setUsername(data.username);
-      setScore(data.points);
+      username(data.username);
+      score(data.points);
     } catch (error) {
       console.error(error);
     }
@@ -79,16 +103,18 @@ const Settings = () => {
         newUsername = prompt('Please enter a new username');
         checkUsername();
       }
-      const newUser = await saveUser(newUsername);
-      if (newUser) {
-        setIsUsernameChanged(true); 
+      const newUser = await saveUser(newUsername, score);
+      if (newUser.error) {
+        newUsername = prompt(newUser.error);
+        checkUsername();
       }
+      dispatch(settingsActions.setUsername(Cookies.get('username')));
+      dispatch(settingsActions.setIsUsernameChanged(true));
     };
     checkUsername();
   };
   
   return (
-    <>
       <div className="settings-container">
         <p>
           Current ID:{' '}
@@ -105,8 +131,8 @@ const Settings = () => {
         <p>
           Current Rank: <span>#{index === -1 ? 'N/A' : index + 1}</span>
         </p>
-        {isUsernameChanged ? null : (
-          <div className="reset-container">
+        <div className="reset-container">
+          {isUsernameChanged ? null : (
             <div>
               <p>Must set a username to see your leaderboard rank</p>
               <br />
@@ -122,10 +148,9 @@ const Settings = () => {
                 </span>
               </p>
             </div>
-          </div>
-        )}
+          )}
       </div>
-    </>
+    </div>
   );
 };
 

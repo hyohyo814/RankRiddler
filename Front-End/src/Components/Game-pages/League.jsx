@@ -7,34 +7,42 @@ import Diamond from '../../Assets/League-Icons/Diamond.png';
 import Master from '../../Assets/League-Icons/Master.png';
 import Grandmaster from '../../Assets/League-Icons/GrandMaster.png';
 import Challenger from '../../Assets/League-Icons/Challenger.png';
-import { useState, useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import check from '../../Assets/Modal-Icons/Check.png';
 import wrong from '../../Assets/Modal-Icons/Wrong.png';
 import VideoPlayer from '../Youtube';
 import Cookies from 'js-cookie';
 import RankImage from './RankImage';
+import { useSelector, useDispatch } from 'react-redux';
+import { leagueActions } from '../../store/LeagueSlice';
 
 const League = () => {
-  const [selectedRank, setSelectedRank] = useState(null);
-  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
-  const [url, setUrl] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [rank, setRank] = useState('');
-  const [result, setResult] = useState('');
-  const [player, setPlayer] = useState('');
-  let [score, setScore] = useState();
-  const [point, setPoint] = useState(0);
+  const dispatch = useDispatch();
+  const selectedRank = useSelector((state) => state.league.selectedRank);
+  const isButtonDisabled = useSelector(
+    (state) => state.league.isButtonDisabled
+  );
+  const url = useSelector((state) => state.csgo.url);
+  const showModal = useSelector((state) => state.league.showModal);
+  const rank = useSelector((state) => state.league.rank);
+  const result = useSelector((state) => state.league.result);
+  const player = useSelector((state) => state.league.player);
+  const score = useSelector((state) => state.league.score);
+  const point = useSelector((state) => state.league.point);
 
   const handleModal = () => {
-    setShowModal(!showModal);
+    dispatch(leagueActions.toggleShowModal());
+
   };
 
   useEffect(() => {
-    setIsButtonDisabled(selectedRank === null);
-  }, [selectedRank]);
+    dispatch(leagueActions.setIsButtonDisabled(selectedRank === null));
+
+  }, [selectedRank, dispatch]);
 
   const handleRankClick = (rank) => {
-    setSelectedRank(rank);
+    dispatch(leagueActions.setSelectedRank(rank));
+
   };
 
   const youtubeUrl = url;
@@ -53,26 +61,32 @@ const League = () => {
   const pic = rankImages[rank];
   const submittedRank = rankImages[selectedRank];
 
-  const getYoutubeUrl = async () => {
+  const getYoutubeUrl = useCallback(async () => {
     const response = await fetch(
       'https://rr-back-end.onrender.com/form/leaguedata'
     );
     const data = await response.json();
     const randomIndex = Math.floor(Math.random() * data.form.length);
-    setUrl(data.form[randomIndex].youtubeLink);
-    setRank(data.form[randomIndex].rank);
-    setPlayer(data.form[randomIndex].playerInfo);
-  };
+    dispatch(leagueActions.setUrl(data.form[randomIndex].youtubeLink));
+
+    dispatch(leagueActions.setRank(data.form[randomIndex].rank));
+
+    dispatch(leagueActions.setPlayer(data.form[randomIndex].playerInfo));
+
+  }, [dispatch]);
 
   useEffect(() => {
     getYoutubeUrl();
-  }, []);
+  }, [getYoutubeUrl]);
 
   const refresh = () => {
     getYoutubeUrl();
-    setSelectedRank(null);
-    setIsButtonDisabled(true);
-    setShowModal(false);
+    dispatch(leagueActions.setSelectedRank(null));
+
+    dispatch(leagueActions.setIsButtonDisabled(true));
+
+    dispatch(leagueActions.hideShowModal());
+
   };
 
   const updatePoints = async (updatedScore) => {
@@ -117,22 +131,27 @@ const League = () => {
     let pointEarned = 0;
 
     if (rank === selectedRank) {
-      setResult(check);
+      dispatch(leagueActions.setResult(check));
+
       pointEarned = 2;
       updatedScore += 2;
     } else if (distance === 1) {
-      setResult(wrong);
+      dispatch(leagueActions.setResult(wrong));
+
       pointEarned = 1;
       updatedScore += 1;
     } else {
-      setResult(wrong);
+      dispatch(leagueActions.setResult(wrong));
+
       pointEarned = -1;
       updatedScore -= 1;
     }
 
     Cookies.set('score', updatedScore.toString());
-    setScore(updatedScore);
-    setPoint(pointEarned);
+    dispatch(leagueActions.setScore(updatedScore));
+
+    dispatch(leagueActions.setPoint(pointEarned));
+
 
     console.log(updatedScore);
     console.log(pointEarned);
