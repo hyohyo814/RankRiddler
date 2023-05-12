@@ -3,15 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import Cookies from 'js-cookie';
 
 const Settings = () => {
-  const [userId, setUserId] = useState(
-    () => localStorage.getItem('userId') || ''
-  );
+  const [userId, setUserId] = useState(() => Cookies.get('userId') || uuidv4());
   const [data, setData] = useState([]);
   const [index, setIndex] = useState(-1);
   const [username, setUsername] = useState(Cookies.get('username') || 'Guest');
-  const [isUsernameChanged, setIsUsernameChanged] = useState(Cookies.get('isUsernameChanged') === 'true');
-  const score = Cookies.get('score') || 0;
-  
+  const [isUsernameChanged, SetisUsernameChanged] = useState(false);
+  const [score, setScore] = useState(0);
+
+  console.log(isUsernameChanged);
   useEffect(() => {
     if (!userId) {
       const id = uuidv4();
@@ -19,30 +18,20 @@ const Settings = () => {
       Cookies.set('userId', shortUuid, { secure: true });
       setUserId(shortUuid);
     }
-  
     const storedUsername = Cookies.get('username') || 'Guest';
     setUsername(storedUsername);
-  
-    // If the stored username is "Guest", set isUsernameChanged to false
-    setIsUsernameChanged(storedUsername !== 'Guest');
-  
-    const storedScore = Cookies.get('score') || 0;
-    Cookies.set('score', storedScore, { secure: true });
+    SetisUsernameChanged(storedUsername !== 'Guest');
   }, [userId]);
-  
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          'https://rr-back-end.onrender.com/allusers',
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        const response = await fetch('http://localhost:3001/allusers', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
         if (!response.ok) {
           throw new Error('Failed to fetch data');
         }
@@ -55,26 +44,6 @@ const Settings = () => {
     fetchData();
   }, []);
 
-  const saveUser = async (username, score) => {
-    try {
-      const response = await fetch('https://rr-back-end.onrender.com/saveuser', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          points: score,
-        }),
-      });
-      const data = await response.json();
-      console.log(data);
-      return data
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   useEffect(() => {
     const foundUser = data.find((user) => user.username === username);
     if (foundUser) {
@@ -84,26 +53,42 @@ const Settings = () => {
     }
   }, [username, data]);
 
+  const saveUser = async (username) => {
+    try {
+      const response = await fetch('http://localhost:3001/saveuser', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+        }),
+        credentials: 'include', // include cookies in the request
+      });
+      const data = await response.json();
+      setScore(data.points);
+      setUsername(data.username);
+      return data;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const usernameReset = () => {
     if (isUsernameChanged) {
       return;
     }
-    Cookies.remove('username');
     let newUsername = prompt('Please enter a new username');
     const checkUsername = async () => {
       if (newUsername === null || newUsername === '') {
         newUsername = prompt('Please enter a new username');
         checkUsername();
-      }   
-      const newUser = await saveUser(newUsername, score);
-      if(newUser.error){
-        newUsername = prompt(newUser.error)
-        checkUsername()
       }
-      Cookies.set('username', newUsername, { secure: true });
-      Cookies.set('isUsernameChanged', true, { secure: true });
-      setUsername(Cookies.get('username'));
-      setIsUsernameChanged(true);       
+      const newUser = await saveUser(newUsername);
+      if (newUser.error) {
+        newUsername = prompt(newUser.error);
+        checkUsername();
+      }
     };
     checkUsername();
   };
@@ -127,11 +112,10 @@ const Settings = () => {
           Current Rank: <span>#{index === -1 ? 'N/A' : index + 1}</span>
         </p>
         <div className="reset-container">
-          {isUsernameChanged ? null 
-          : (
+          {isUsernameChanged ? null : (
             <div>
               <p>Must set a username to see your leaderboard rank</p>
-              <br/>
+              <br />
               <h5>
                 Can only be changed
                 <span style={{ color: '#e34234' }}>

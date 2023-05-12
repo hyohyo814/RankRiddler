@@ -77,16 +77,19 @@ const League = () => {
 
   const updatePoints = async (updatedScore) => {
     try {
-      const response = await fetch('https://rr-back-end.onrender.com/updatepoints', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: Cookies.get('username'),
-          points: updatedScore,
-        }),
-      });
+      const response = await fetch(
+        'https://rr-back-end.onrender.com/updatepoints',
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: Cookies.get('username'),
+            points: updatedScore,
+          }),
+        }
+      );
       const data = await response.json();
       console.log(data);
     } catch (error) {
@@ -110,7 +113,7 @@ const League = () => {
     const selectedRankIndex = rankList.indexOf(selectedRank);
     const distance = Math.abs(rankIndex - selectedRankIndex);
 
-    let updatedScore = parseInt(Cookies.get('score') || '0'); 
+    let updatedScore = parseInt(Cookies.get('score') || '0');
     let pointEarned = 0;
 
     if (rank === selectedRank) {

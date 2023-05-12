@@ -16,6 +16,7 @@ app.use(
       "https://www.rankriddler.com",
       "http://localhost:3000",
     ],
+    credentials: true,
   })
 );
 
