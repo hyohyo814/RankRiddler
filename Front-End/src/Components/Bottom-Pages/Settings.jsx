@@ -28,10 +28,6 @@ const Settings = () => {
   
     const storedScore = Cookies.get('score') || 0;
     Cookies.set('score', storedScore, { secure: true });
-  
-    if (userId && storedUsername !== 'Guest') {
-      saveUser(storedUsername, storedScore);
-    }
   }, [userId]);
   
 
@@ -73,6 +69,7 @@ const Settings = () => {
       });
       const data = await response.json();
       console.log(data);
+      return data
     } catch (error) {
       console.error(error);
     }
@@ -93,26 +90,20 @@ const Settings = () => {
     }
     Cookies.remove('username');
     let newUsername = prompt('Please enter a new username');
-    const checkUsername = () => {
-      if (newUsername === null) {
+    const checkUsername = async () => {
+      if (newUsername === null || newUsername === '') {
         newUsername = prompt('Please enter a new username');
         checkUsername();
-      } else if (newUsername === '') {
-        newUsername = prompt('Please enter a new username');
-        checkUsername();
-      } else {
-        const sameName = data.find((user) => user.username === newUsername);
-        if (sameName) {
-          newUsername = prompt(
-            'Username already exists, please enter a new username'
-          );
-          checkUsername();
-        }
-        Cookies.set('username', newUsername,{ secure: true });
-        Cookies.set('isUsernameChanged', true, { secure: true }); 
-        setIsUsernameChanged(true); 
-        saveUser(newUsername, score);
+      }   
+      const newUser = await saveUser(newUsername, score);
+      if(newUser.error){
+        newUsername = prompt(newUser.error)
+        checkUsername()
       }
+      Cookies.set('username', newUsername, { secure: true });
+      Cookies.set('isUsernameChanged', true, { secure: true });
+      setUsername(Cookies.get('username'));
+      setIsUsernameChanged(true);       
     };
     checkUsername();
   };
@@ -139,7 +130,7 @@ const Settings = () => {
           {isUsernameChanged ? null 
           : (
             <div>
-              <p>Must set a username to have your points save</p>
+              <p>Must set a username to see your leaderboard rank</p>
               <br/>
               <h5>
                 Can only be changed
