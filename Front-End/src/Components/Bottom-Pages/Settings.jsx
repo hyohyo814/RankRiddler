@@ -6,11 +6,10 @@ const Settings = () => {
   const [userId, setUserId] = useState(() => Cookies.get('userId') || uuidv4());
   const [data, setData] = useState([]);
   const [index, setIndex] = useState(-1);
-  const [username, setUsername] = useState(Cookies.get('username') || 'Guest');
-  const [isUsernameChanged, SetisUsernameChanged] = useState(false);
+  const [username, setUsername] = useState('Guest');
+  const [isUsernameChanged, setIsUsernameChanged] = useState(false);
   const [score, setScore] = useState(0);
 
-  console.log(isUsernameChanged);
   useEffect(() => {
     if (!userId) {
       const id = uuidv4();
@@ -18,9 +17,6 @@ const Settings = () => {
       Cookies.set('userId', shortUuid, { secure: true });
       setUserId(shortUuid);
     }
-    const storedUsername = Cookies.get('username') || 'Guest';
-    setUsername(storedUsername);
-    SetisUsernameChanged(storedUsername !== 'Guest');
   }, [userId]);
 
   useEffect(() => {
@@ -63,12 +59,11 @@ const Settings = () => {
         body: JSON.stringify({
           username: username,
         }),
-        credentials: 'include', // include cookies in the request
+        credentials: 'include', 
       });
       const data = await response.json();
-      setScore(data.points);
       setUsername(data.username);
-      return data;
+      setScore(data.points);
     } catch (error) {
       console.error(error);
     }
@@ -85,14 +80,13 @@ const Settings = () => {
         checkUsername();
       }
       const newUser = await saveUser(newUsername);
-      if (newUser.error) {
-        newUsername = prompt(newUser.error);
-        checkUsername();
+      if (newUser) {
+        setIsUsernameChanged(true); 
       }
     };
     checkUsername();
   };
-
+  
   return (
     <>
       <div className="settings-container">
@@ -111,8 +105,8 @@ const Settings = () => {
         <p>
           Current Rank: <span>#{index === -1 ? 'N/A' : index + 1}</span>
         </p>
-        <div className="reset-container">
-          {isUsernameChanged ? null : (
+        {isUsernameChanged ? null : (
+          <div className="reset-container">
             <div>
               <p>Must set a username to see your leaderboard rank</p>
               <br />
@@ -128,8 +122,8 @@ const Settings = () => {
                 </span>
               </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </>
   );

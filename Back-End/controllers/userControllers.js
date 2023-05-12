@@ -28,6 +28,8 @@ const createUser = async (req, res) => {
   try {
     const { username } = req.body;
     const score = 0;
+    const changed = true;
+
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(409).json({ error: "Username already exists" });
@@ -44,7 +46,7 @@ const createUser = async (req, res) => {
 
     res.cookie("username", username, { httpOnly: true, secure: true });
     res.cookie("points", score, { httpOnly: true, secure: true });
-    res.cookie("isUsernameChanged", true, { httpOnly: true, secure: true });
+    res.cookie("isUsernameChanged", changed, { httpOnly: true, secure: true });
 
     res.status(201).json(user);
   } catch (error) {
